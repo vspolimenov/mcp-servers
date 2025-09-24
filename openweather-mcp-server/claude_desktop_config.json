@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "openweather-mcp-server": {
+      "command": "powershell",
+      "args": ["-File", "run-server.ps1"]
+    }
+  }
+}

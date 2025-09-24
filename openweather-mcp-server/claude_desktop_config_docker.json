@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "openweather-mcp-server": {
+      "command": "docker",
+      "args": ["run", "--rm", "-i", "-e", "OPENWEATHER_API_KEY=YOUR_API_KEY_HERE", "openweather-mcp-server:latest"]
+    }
+  }
+}
