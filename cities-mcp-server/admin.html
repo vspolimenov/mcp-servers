@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cities MCP Server - Admin Page</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f7;
+        }
+        .container {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #1d1d1f;
+            margin-bottom: 30px;
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #d2d2d7;
+            border-radius: 8px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #1d1d1f;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #d2d2d7;
+            border-radius: 6px;
+            font-size: 16px;
+        }
+        button {
+            background: #007aff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        button:hover {
+            background: #0056cc;
+        }
+        button:disabled {
+            background: #d2d2d7;
+            cursor: not-allowed;
+        }
+        .results {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f6f6f6;
+            border-radius: 8px;
+            font-family: Monaco, 'Courier New', monospace;
+            font-size: 14px;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .log {
+            margin-top: 20px;
+            padding: 15px;
+            background: #1d1d1f;
+            color: #f5f5f7;
+            border-radius: 8px;
+            font-family: Monaco, 'Courier New', monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 6px;
+            margin: 10px 0;
+            font-weight: 600;
+        }
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .status.loading {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .quick-tests {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+        .quick-test-btn {
+            background: #28a745;
+            font-size: 14px;
+            padding: 8px 16px;
+        }
+        .quick-test-btn:hover {
+            background: #218838;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏙️ Cities MCP Server - Admin Test Page</h1>
+        
+        <div class="test-section">
+            <h2>🔍 Overpass API Test</h2>
+            <div class="form-group">
+                <label for="searchTerm">Search Term:</label>
+                <input type="text" id="searchTerm" placeholder="Enter city name (e.g., София, Пловдив, Sofia)" value="София">
+            </div>
+            
+            <div class="quick-tests">
+                <button class="quick-test-btn" onclick="testQuick('София')">София</button>
+                <button class="quick-test-btn" onclick="testQuick('Sofia')">Sofia</button>
+                <button class="quick-test-btn" onclick="testQuick('Plovdiv')">Plovdiv</button>
+                <button class="quick-test-btn" onclick="testQuick('Пловдив')">Пловдив</button>
+                <button class="quick-test-btn" onclick="testQuick('Витоша')">Витоша</button>
+                <button class="quick-test-btn" onclick="testQuick('Vitosha')">Vitosha</button>
+            </div>
+            
+            <button onclick="testOverpass()" id="testBtn">Test Overpass API</button>
+            <button onclick="clearResults()">Clear Results</button>
+            
+            <div id="status"></div>
+            <div id="results" class="results" style="display:none;"></div>
+            <div id="log" class="log" style="display:none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>📖 Wikipedia API Test</h2>
+            <div class="form-group">
+                <label for="wikipediaTag">Wikipedia Tag (format: lang:title):</label>
+                <input type="text" id="wikipediaTag" placeholder="Enter Wikipedia tag (e.g., en:Sofia, bg:София)" value="en:Sofia">
+            </div>
+            
+            <div class="quick-tests">
+                <button class="quick-test-btn" onclick="testWikipediaQuick('en:Sofia')">en:Sofia</button>
+                <button class="quick-test-btn" onclick="testWikipediaQuick('bg:София')">bg:София</button>
+                <button class="quick-test-btn" onclick="testWikipediaQuick('en:Plovdiv')">en:Plovdiv</button>
+                <button class="quick-test-btn" onclick="testWikipediaQuick('bg:Пловдив')">bg:Пловдив</button>
+                <button class="quick-test-btn" onclick="testWikipediaQuick('en:Vitosha')">en:Vitosha</button>
+                <button class="quick-test-btn" onclick="testWikipediaQuick('bg:Витоша')">bg:Витоша</button>
+            </div>
+            
+            <button onclick="testWikipedia()" id="testWikipediaBtn">Test Wikipedia API</button>
+            <button onclick="clearWikipediaResults()">Clear Results</button>
+            
+            <div id="wikipediaStatus"></div>
+            <div id="wikipediaResults" class="results" style="display:none;"></div>
+            <div id="wikipediaLog" class="log" style="display:none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>🌐 Wikidata API Test</h2>
+            <div class="form-group">
+                <label for="wikidataId">Wikidata ID (format: Q...):</label>
+                <input type="text" id="wikidataId" placeholder="Enter Wikidata ID (e.g., Q472, Q6506)" value="Q472">
+            </div>
+            
+            <div class="quick-tests">
+                <button class="quick-test-btn" onclick="testWikidataQuick('Q472')">Q472 (Sofia)</button>
+                <button class="quick-test-btn" onclick="testWikidataQuick('Q6506')">Q6506 (Plovdiv)</button>
+                <button class="quick-test-btn" onclick="testWikidataQuick('Q209851')">Q209851 (Vitosha)</button>
+                <button class="quick-test-btn" onclick="testWikidataQuick('Q219')">Q219 (Bulgaria)</button>
+            </div>
+            
+            <button onclick="testWikidata()" id="testWikidataBtn">Test Wikidata API</button>
+            <button onclick="clearWikidataResults()">Clear Results</button>
+            
+            <div id="wikidataStatus"></div>
+            <div id="wikidataResults" class="results" style="display:none;"></div>
+            <div id="wikidataLog" class="log" style="display:none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>📊 Service Statistics</h2>
+            <div id="stats">
+                <p><strong>Total Requests:</strong> <span id="totalRequests">0</span></p>
+                <p><strong>Successful Requests:</strong> <span id="successfulRequests">0</span></p>
+                <p><strong>Failed Requests:</strong> <span id="failedRequests">0</span></p>
+                <p><strong>Average Response Time:</strong> <span id="avgResponseTime">-</span></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let stats = {
+            total: 0,
+            successful: 0,
+            failed: 0,
+            responseTimes: []
+        };
+
+        function updateStats() {
+            document.getElementById('totalRequests').textContent = stats.total;
+            document.getElementById('successfulRequests').textContent = stats.successful;
+            document.getElementById('failedRequests').textContent = stats.failed;
+            
+            const avgTime = stats.responseTimes.length > 0 
+                ? (stats.responseTimes.reduce((a,b) => a + b, 0) / stats.responseTimes.length).toFixed(2) + 'ms'
+                : '-';
+            document.getElementById('avgResponseTime').textContent = avgTime;
+        }
+
+        function setStatus(message, type = 'loading') {
+            const statusEl = document.getElementById('status');
+            statusEl.innerHTML = `<div class="status ${type}">${message}</div>`;
+        }
+
+        function log(message) {
+            const logEl = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            logEl.textContent += `[${timestamp}] ${message}\n`;
+            logEl.style.display = 'block';
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+
+        function showResults(data) {
+            const resultsEl = document.getElementById('results');
+            resultsEl.textContent = JSON.stringify(data, null, 2);
+            resultsEl.style.display = 'block';
+        }
+
+        function testQuick(term) {
+            document.getElementById('searchTerm').value = term;
+            testOverpass();
+        }
+
+        async function testOverpass() {
+            const searchTerm = document.getElementById('searchTerm').value.trim();
+            if (!searchTerm) {
+                setStatus('Please enter a search term', 'error');
+                return;
+            }
+
+            const testBtn = document.getElementById('testBtn');
+            testBtn.disabled = true;
+            
+            setStatus(`🔍 Searching for "${searchTerm}"...`, 'loading');
+            log(`Starting search for: "${searchTerm}"`);
+
+            stats.total++;
+            const startTime = performance.now();
+
+            try {
+                // Since we can't directly import the service in browser, 
+                // we'll simulate the API call structure
+                const response = await fetch('/api/test-overpass', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ searchTerm })
+                });
+
+                const endTime = performance.now();
+                const responseTime = endTime - startTime;
+                stats.responseTimes.push(responseTime);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                
+                stats.successful++;
+                setStatus(`✅ Found ${data.results?.length || 0} results (${responseTime.toFixed(2)}ms)`, 'success');
+                log(`Success! Found ${data.results?.length || 0} results in ${responseTime.toFixed(2)}ms`);
+                showResults(data);
+
+            } catch (error) {
+                const endTime = performance.now();
+                const responseTime = endTime - startTime;
+                stats.responseTimes.push(responseTime);
+                
+                stats.failed++;
+                setStatus(`❌ Error: ${error.message}`, 'error');
+                log(`Error after ${responseTime.toFixed(2)}ms: ${error.message}`);
+                showResults({ error: error.message, stack: error.stack });
+            }
+
+            updateStats();
+            testBtn.disabled = false;
+        }
+
+        function clearResults() {
+            document.getElementById('results').style.display = 'none';
+            document.getElementById('log').style.display = 'none';
+            document.getElementById('log').textContent = '';
+            document.getElementById('status').innerHTML = '';
+        }
+
+        // Wikipedia helper functions
+        function setWikipediaStatus(message, type = 'loading') {
+            const statusEl = document.getElementById('wikipediaStatus');
+            statusEl.innerHTML = `<div class="status ${type}">${message}</div>`;
+        }
+
+        function logWikipedia(message) {
+            const logEl = document.getElementById('wikipediaLog');
+            const timestamp = new Date().toLocaleTimeString();
+            logEl.textContent += `[${timestamp}] ${message}\n`;
+            logEl.style.display = 'block';
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+
+        function showWikipediaResults(data) {
+            const resultsEl = document.getElementById('wikipediaResults');
+            resultsEl.textContent = JSON.stringify(data, null, 2);
+            resultsEl.style.display = 'block';
+        }
+
+        function testWikipediaQuick(tag) {
+            document.getElementById('wikipediaTag').value = tag;
+            testWikipedia();
+        }
+
+        async function testWikipedia() {
+            const wikipediaTag = document.getElementById('wikipediaTag').value.trim();
+            if (!wikipediaTag) {
+                setWikipediaStatus('Please enter a Wikipedia tag', 'error');
+                return;
+            }
+
+            const testBtn = document.getElementById('testWikipediaBtn');
+            testBtn.disabled = true;
+            
+            setWikipediaStatus(`📖 Looking up "${wikipediaTag}"...`, 'loading');
+            logWikipedia(`Starting Wikipedia lookup for: "${wikipediaTag}"`);
+
+            stats.total++;
+            const startTime = performance.now();
+
+            try {
+                const response = await fetch('/api/test-wikipedia', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ wikipediaTag })
+                });
+
+                const endTime = performance.now();
+                const responseTime = endTime - startTime;
+                stats.responseTimes.push(responseTime);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                
+                stats.successful++;
+                const hasResult = data.result && Object.keys(data.result).length > 0;
+                setWikipediaStatus(`✅ ${hasResult ? 'Found data' : 'No data found'} (${responseTime.toFixed(2)}ms)`, 'success');
+                logWikipedia(`Success! ${hasResult ? 'Found Wikipedia data' : 'No data found'} in ${responseTime.toFixed(2)}ms`);
+                showWikipediaResults(data);
+
+            } catch (error) {
+                const endTime = performance.now();
+                const responseTime = endTime - startTime;
+                stats.responseTimes.push(responseTime);
+                
+                stats.failed++;
+                setWikipediaStatus(`❌ Error: ${error.message}`, 'error');
+                logWikipedia(`Error after ${responseTime.toFixed(2)}ms: ${error.message}`);
+                showWikipediaResults({ error: error.message, stack: error.stack });
+            }
+
+            updateStats();
+            testBtn.disabled = false;
+        }
+
+        function clearWikipediaResults() {
+            document.getElementById('wikipediaResults').style.display = 'none';
+            document.getElementById('wikipediaLog').style.display = 'none';
+            document.getElementById('wikipediaLog').textContent = '';
+            document.getElementById('wikipediaStatus').innerHTML = '';
+        }
+
+        // Wikidata helper functions
+        function setWikidataStatus(message, type = 'loading') {
+            const statusEl = document.getElementById('wikidataStatus');
+            statusEl.innerHTML = `<div class="status ${type}">${message}</div>`;
+        }
+
+        function logWikidata(message) {
+            const logEl = document.getElementById('wikidataLog');
+            const timestamp = new Date().toLocaleTimeString();
+            logEl.textContent += `[${timestamp}] ${message}\n`;
+            logEl.style.display = 'block';
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+
+        function showWikidataResults(data) {
+            const resultsEl = document.getElementById('wikidataResults');
+            resultsEl.textContent = JSON.stringify(data, null, 2);
+            resultsEl.style.display = 'block';
+        }
+
+        function testWikidataQuick(id) {
+            document.getElementById('wikidataId').value = id;
+            testWikidata();
+        }
+
+        async function testWikidata() {
+            const wikidataId = document.getElementById('wikidataId').value.trim();
+            if (!wikidataId) {
+                setWikidataStatus('Please enter a Wikidata ID', 'error');
+                return;
+            }
+
+            const testBtn = document.getElementById('testWikidataBtn');
+            testBtn.disabled = true;
+            
+            setWikidataStatus(`🌐 Looking up "${wikidataId}"...`, 'loading');
+            logWikidata(`Starting Wikidata lookup for: "${wikidataId}"`);
+
+            stats.total++;
+            const startTime = performance.now();
+
+            try {
+                const response = await fetch('/api/test-wikidata', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ wikidataId })
+                });
+
+                const endTime = performance.now();
+                const responseTime = endTime - startTime;
+                stats.responseTimes.push(responseTime);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                
+                stats.successful++;
+                const hasResult = data.result && Object.keys(data.result).length > 0;
+                setWikidataStatus(`✅ ${hasResult ? 'Found data' : 'No data found'} (${responseTime.toFixed(2)}ms)`, 'success');
+                logWikidata(`Success! ${hasResult ? 'Found Wikidata information' : 'No data found'} in ${responseTime.toFixed(2)}ms`);
+                showWikidataResults(data);
+
+            } catch (error) {
+                const endTime = performance.now();
+                const responseTime = endTime - startTime;
+                stats.responseTimes.push(responseTime);
+                
+                stats.failed++;
+                setWikidataStatus(`❌ Error: ${error.message}`, 'error');
+                logWikidata(`Error after ${responseTime.toFixed(2)}ms: ${error.message}`);
+                showWikidataResults({ error: error.message, stack: error.stack });
+            }
+
+            updateStats();
+            testBtn.disabled = false;
+        }
+
+        function clearWikidataResults() {
+            document.getElementById('wikidataResults').style.display = 'none';
+            document.getElementById('wikidataLog').style.display = 'none';
+            document.getElementById('wikidataLog').textContent = '';
+            document.getElementById('wikidataStatus').innerHTML = '';
+        }
+
+        // Initialize
+        updateStats();
+        log('Admin page loaded and ready for testing all APIs: Overpass, Wikipedia, and Wikidata');
+    </script>
+</body>
+</html>
