@@ -51,6 +51,70 @@ const wikipediaService = new WikipediaService();
 const wikidataService = new WikidataService();
 
 /**
+ * Enrich OSM data with Wikipedia and Wikidata information
+ */
+async function enrichLocationData(osmData) {
+    // Enrich with Wikipedia
+    let wikipediaData = null;
+    if (osmData.wikipedia) {
+        console.error(`Fetching Wikipedia data for ${osmData.wikipedia}...`);
+        try {
+            wikipediaData = await wikipediaService.getInfo(osmData.wikipedia);
+        } catch (error) {
+            console.error(`⚠️  Wikipedia unavailable for ${osmData.wikipedia}: ${error.message}`);
+        }
+    }
+
+    // Enrich with Wikidata
+    let wikidataData = null;
+    if (osmData.wikidata) {
+        console.error(`Fetching Wikidata info for ${osmData.wikidata}...`);
+        try {
+            wikidataData = await wikidataService.getInfo(osmData.wikidata);
+        } catch (error) {
+            console.error(`⚠️  Wikidata unavailable for ${osmData.wikidata}: ${error.message}`);
+        }
+    }
+
+    // Merge all data
+    const enrichedData = {
+        name: osmData.name,
+        type: osmData.type,
+        lat: osmData.lat,
+        lon: osmData.lon,
+        osmId: osmData.osmId,
+        osmType: osmData.osmType,
+        osmTags: osmData.osmTags,
+
+        // Wikipedia data
+        ...(wikipediaData?.description || wikidataData?.description ? { description: wikipediaData?.description || wikidataData?.description } : {}),
+        ...(wikipediaData?.url ? { wikipediaUrl: wikipediaData.url } : {}),
+        ...(wikipediaData?.lang ? { wikipediaLang: wikipediaData.lang } : {}),
+
+        // Wikidata structured data
+        ...(wikidataData?.population ? { population: wikidataData.population } : {}),
+        ...(wikidataData?.elevation || osmData.osmTags.ele ? { elevation: wikidataData?.elevation || parseInt(osmData.osmTags.ele) } : {}),
+        ...(wikidataData?.area ? { area: wikidataData.area } : {}),
+        ...(wikidataData?.officialWebsite ? { officialWebsite: wikidataData.officialWebsite } : {}),
+
+        // Images
+        images: [
+            wikipediaData?.image,
+            wikipediaData?.thumbnail,
+            ...(wikidataData?.images || [])
+        ].filter(Boolean),
+
+        // Metadata
+        ...(osmData.wikidata ? { wikidataId: osmData.wikidata } : {}),
+        ...(osmData.wikipedia ? { wikipediaTag: osmData.wikipedia } : {}),
+        lastUpdated: new Date().toISOString(),
+        source: 'osm'
+    };
+
+    return enrichedData;
+}
+
+/**
  * Search for a location with caching and enrichment
  * Uses the appropriate collection based on location type
  */
@@ -121,60 +185,8 @@ async function searchLocation(locationName, locationType = null, category = null
     // Update collection based on actual type found
     const actualCollection = getCollectionForType(osmData.type);
 
-    // Step 3: Enrich with Wikipedia
-    let wikipediaData = null;
-    if (osmData.wikipedia) {
-        console.error(`Fetching Wikipedia data for ${osmData.wikipedia}...`);
-        wikipediaData = await wikipediaService.getInfo(osmData.wikipedia);
-    }
-
-    // Step 4: Enrich with Wikidata (with fallback handling)
-    let wikidataData = null;
-    if (osmData.wikidata) {
-        console.error(`Fetching Wikidata info for ${osmData.wikidata}...`);
-        try {
-            wikidataData = await wikidataService.getInfo(osmData.wikidata);
-        } catch (error) {
-            console.error(`⚠️  Wikidata unavailable for ${osmData.wikidata}: ${error.message}`);
-            console.error(`🔄 Continuing without Wikidata enrichment...`);
-            wikidataData = null;
-        }
-    }
-
-    // Step 5: Merge all data
-    const enrichedData = {
-        name: osmData.name,
-        type: osmData.type,
-        lat: osmData.lat,
-        lon: osmData.lon,
-        osmId: osmData.osmId,
-        osmType: osmData.osmType,
-        osmTags: osmData.osmTags,
-
-        // Wikipedia data
-        ...(wikipediaData?.description || wikidataData?.description ? { description: wikipediaData?.description || wikidataData?.description } : {}),
-        ...(wikipediaData?.url ? { wikipediaUrl: wikipediaData.url } : {}),
-        ...(wikipediaData?.lang ? { wikipediaLang: wikipediaData.lang } : {}),
-
-        // Wikidata structured data
-        ...(wikidataData?.population ? { population: wikidataData.population } : {}),
-        ...(wikidataData?.elevation || osmData.osmTags.ele ? { elevation: wikidataData?.elevation || parseInt(osmData.osmTags.ele) } : {}),
-        ...(wikidataData?.area ? { area: wikidataData.area } : {}),
-        ...(wikidataData?.officialWebsite ? { officialWebsite: wikidataData.officialWebsite } : {}),
-
-        // Images
-        images: [
-            wikipediaData?.image,
-            wikipediaData?.thumbnail,
-            ...(wikidataData?.images || [])
-        ].filter(Boolean),
-
-        // Metadata
-        ...(osmData.wikidata ? { wikidataId: osmData.wikidata } : {}),
-        ...(osmData.wikipedia ? { wikipediaTag: osmData.wikipedia } : {}),
-        lastUpdated: new Date().toISOString(),
-        source: 'osm'
-    };
+    // Step 3-5: Enrich with Wikipedia and Wikidata
+    const enrichedData = await enrichLocationData(osmData);
 
     // Validate before saving
     const validation = validateLocationData(enrichedData);
@@ -192,6 +204,114 @@ async function searchLocation(locationName, locationType = null, category = null
         id: docRef.id,
         collection: actualCollection
     };
+}
+
+/**
+ * Search for all locations matching a name (returns multiple results)
+ */
+async function searchAllLocations(locationName, locationType = null, category = null) {
+    if (!locationName || typeof locationName !== 'string') {
+        throw new Error('Location name is required');
+    }
+
+    const normalizedName = locationName.trim();
+    const results = [];
+
+    // Determine which collection to use
+    let collectionName = COLLECTION_NAME;
+    if (locationType) {
+        collectionName = getCollectionForType(locationType);
+    } else if (category) {
+        collectionName = category;
+    }
+
+    // Step 1: Check Firebase cache for ALL matches
+    console.error(`Searching for all "${normalizedName}"${locationType ? ` (type: ${locationType})` : ''} in ${collectionName} collection...`);
+    let cacheQuery = firestore.collection(collectionName)
+        .where('name', '==', normalizedName);
+
+    if (locationType) {
+        cacheQuery = cacheQuery.where('type', '==', locationType);
+    }
+
+    const cacheSnapshot = await cacheQuery.get();
+
+    if (!cacheSnapshot.empty) {
+        console.error(`Found ${cacheSnapshot.size} cached results for "${normalizedName}"`);
+        cacheSnapshot.docs.forEach(doc => {
+            results.push({
+                ...doc.data(),
+                id: doc.id,
+                source: 'cache',
+                collection: collectionName
+            });
+        });
+
+        // Return cached results immediately - no need to query OSM
+        console.error(`Returning ${results.length} cached results for "${normalizedName}"`);
+        return results;
+    }
+
+    // Step 2: Query Overpass for ALL results (only if not in cache)
+    console.error(`"${normalizedName}" not in cache, querying OSM for all results...`);
+    let osmResults;
+
+    if (locationType) {
+        osmResults = await overpassService.searchByName(normalizedName, locationType);
+    } else if (category === COLLECTIONS.CITIES) {
+        osmResults = await overpassService.searchCities(normalizedName);
+    } else if (category === COLLECTIONS.MOUNTAINS) {
+        osmResults = await overpassService.searchMountains(normalizedName);
+    } else if (category === COLLECTIONS.PEAKS) {
+        osmResults = await overpassService.searchPeaks(normalizedName);
+    } else if (category === COLLECTIONS.NATURAL_SITES) {
+        osmResults = await overpassService.searchNaturalSites(normalizedName);
+    } else if (category === COLLECTIONS.CULTURAL_SITES) {
+        osmResults = await overpassService.searchCulturalSites(normalizedName);
+    } else {
+        osmResults = await overpassService.searchByName(normalizedName, locationType);
+    }
+
+    // Process OSM results - enrich and save non-duplicates
+    for (const osmData of osmResults) {
+        // Check if this location already exists in results (by coordinates)
+        const isDuplicate = results.some(r =>
+            Math.abs(r.lat - osmData.lat) < 0.001 &&
+            Math.abs(r.lon - osmData.lon) < 0.001
+        );
+
+        if (!isDuplicate) {
+            console.error(`Enriching and saving "${osmData.name}" at ${osmData.lat}, ${osmData.lon}...`);
+
+            // Enrich with Wikipedia and Wikidata
+            const enrichedData = await enrichLocationData(osmData);
+
+            // Validate before saving
+            const validation = validateLocationData(enrichedData);
+            if (!validation.valid) {
+                console.error(`Validation failed for "${osmData.name}": ${validation.errors.map(e => e.message).join('; ')}`);
+                console.error('Skipping this result...');
+                continue;
+            }
+
+            // Determine collection and save to Firebase
+            const actualCollection = getCollectionForType(osmData.type);
+            const docRef = await firestore.collection(actualCollection).add(enrichedData);
+
+            results.push({
+                ...enrichedData,
+                id: docRef.id,
+                collection: actualCollection
+            });
+        }
+    }
+
+    if (results.length === 0) {
+        throw new Error(`No results found for "${normalizedName}"`);
+    }
+
+    console.error(`Returning ${results.length} fully enriched and saved results for "${normalizedName}"`);
+    return results;
 }
 
 /**
@@ -315,6 +435,95 @@ const TOOLS = [
     {
         name: 'search_location',
         description: 'General location search (legacy). Tries cities first, then natural features, then cultural sites. Use specific search tools (search_cities, search_mountains, etc.) for better performance.',
+        inputSchema: {
+            type: 'object',
+            properties: {
+                name: {
+                    type: 'string',
+                    description: 'Name of the location to search for'
+                },
+                type: {
+                    type: 'string',
+                    description: 'Optional: Specific type of location to search for',
+                    enum: LOCATION_TYPES
+                }
+            },
+            required: ['name']
+        }
+    },
+    {
+        name: 'search_all_cities',
+        description: 'Search for ALL cities/towns/villages with the given name. Returns multiple results if there are locations with the same name.',
+        inputSchema: {
+            type: 'object',
+            properties: {
+                name: {
+                    type: 'string',
+                    description: 'Name of the city, town, or village to search for'
+                }
+            },
+            required: ['name']
+        }
+    },
+    {
+        name: 'search_all_mountains',
+        description: 'Search for ALL mountain ranges with the given name. Returns multiple results if there are mountain ranges with the same name.',
+        inputSchema: {
+            type: 'object',
+            properties: {
+                name: {
+                    type: 'string',
+                    description: 'Name of the mountain range to search for'
+                }
+            },
+            required: ['name']
+        }
+    },
+    {
+        name: 'search_all_peaks',
+        description: 'Search for ALL peaks with the given name. Returns multiple results if there are peaks with the same name.',
+        inputSchema: {
+            type: 'object',
+            properties: {
+                name: {
+                    type: 'string',
+                    description: 'Name of the peak to search for'
+                }
+            },
+            required: ['name']
+        }
+    },
+    {
+        name: 'search_all_natural_sites',
+        description: 'Search for ALL natural sites (caves, waterfalls) with the given name. Returns multiple results if there are sites with the same name.',
+        inputSchema: {
+            type: 'object',
+            properties: {
+                name: {
+                    type: 'string',
+                    description: 'Name of the natural site to search for'
+                }
+            },
+            required: ['name']
+        }
+    },
+    {
+        name: 'search_all_cultural_sites',
+        description: 'Search for ALL cultural/historic sites with the given name. Returns multiple results if there are sites with the same name.',
+        inputSchema: {
+            type: 'object',
+            properties: {
+                name: {
+                    type: 'string',
+                    description: 'Name of the cultural/historic site to search for'
+                }
+            },
+            required: ['name']
+        }
+    },
+    {
+        name: 'search_all_locations',
+        description: 'Search for ALL locations with the given name across any category. Returns multiple results if there are locations with the same name.',
         inputSchema: {
             type: 'object',
             properties: {
@@ -479,6 +688,90 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                         {
                             type: 'text',
                             text: JSON.stringify(location, null, 2),
+                        },
+                    ],
+                };
+
+            case 'search_all_cities':
+                if (!args?.name) {
+                    throw new Error('Location name is required');
+                }
+                const allCities = await searchAllLocations(args.name, null, COLLECTIONS.CITIES);
+                return {
+                    content: [
+                        {
+                            type: 'text',
+                            text: JSON.stringify(allCities, null, 2),
+                        },
+                    ],
+                };
+
+            case 'search_all_mountains':
+                if (!args?.name) {
+                    throw new Error('Location name is required');
+                }
+                const allMountains = await searchAllLocations(args.name, null, COLLECTIONS.MOUNTAINS);
+                return {
+                    content: [
+                        {
+                            type: 'text',
+                            text: JSON.stringify(allMountains, null, 2),
+                        },
+                    ],
+                };
+
+            case 'search_all_peaks':
+                if (!args?.name) {
+                    throw new Error('Location name is required');
+                }
+                const allPeaks = await searchAllLocations(args.name, null, COLLECTIONS.PEAKS);
+                return {
+                    content: [
+                        {
+                            type: 'text',
+                            text: JSON.stringify(allPeaks, null, 2),
+                        },
+                    ],
+                };
+
+            case 'search_all_natural_sites':
+                if (!args?.name) {
+                    throw new Error('Location name is required');
+                }
+                const allNaturalSites = await searchAllLocations(args.name, null, COLLECTIONS.NATURAL_SITES);
+                return {
+                    content: [
+                        {
+                            type: 'text',
+                            text: JSON.stringify(allNaturalSites, null, 2),
+                        },
+                    ],
+                };
+
+            case 'search_all_cultural_sites':
+                if (!args?.name) {
+                    throw new Error('Location name is required');
+                }
+                const allCulturalSites = await searchAllLocations(args.name, null, COLLECTIONS.CULTURAL_SITES);
+                return {
+                    content: [
+                        {
+                            type: 'text',
+                            text: JSON.stringify(allCulturalSites, null, 2),
+                        },
+                    ],
+                };
+
+            case 'search_all_locations':
+                if (!args?.name) {
+                    throw new Error('Location name is required');
+                }
+                const allLocations = await searchAllLocations(args.name, args.type || null);
+                return {
+                    content: [
+                        {
+                            type: 'text',
+                            text: JSON.stringify(allLocations, null, 2),
                         },
                     ],
                 };
