@@ -1,4 +1,4 @@
-export function validateCityData(data) {
+export function validateLocationData(data) {
     const errors = [];
 
     // Required fields
@@ -24,3 +24,6 @@ export function validateCityData(data) {
         data: errors.length === 0 ? data : null
     };
 }
+
+// Backward compatibility alias
+export const validateCityData = validateLocationData;

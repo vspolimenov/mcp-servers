@@ -123,27 +123,109 @@
 </head>
 <body>
     <div class="container">
-        <h1>🏙️ Cities MCP Server - Admin Test Page</h1>
-        
+        <h1>📍 Locations MCP Server - Admin Test Page</h1>
+
         <div class="test-section">
-            <h2>🔍 Overpass API Test</h2>
+            <h2>🏙️ Cities Search (cities/towns/villages)</h2>
+            <div class="form-group">
+                <label for="citiesSearchTerm">Search Term:</label>
+                <input type="text" id="citiesSearchTerm" placeholder="Enter city name (e.g., София, Пловдив)" value="София">
+            </div>
+
+            <div class="quick-tests">
+                <button class="quick-test-btn" onclick="testCitiesQuick('София')">София</button>
+                <button class="quick-test-btn" onclick="testCitiesQuick('Пловдив')">Пловдив</button>
+                <button class="quick-test-btn" onclick="testCitiesQuick('Варна')">Варна</button>
+                <button class="quick-test-btn" onclick="testCitiesQuick('Бургас')">Бургас</button>
+            </div>
+
+            <button onclick="testCities()" id="testCitiesBtn">Search Cities</button>
+            <button onclick="clearCitiesResults()">Clear Results</button>
+
+            <div id="citiesStatus"></div>
+            <div id="citiesResults" class="results" style="display:none;"></div>
+            <div id="citiesLog" class="log" style="display:none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>⛰️ Mountains Search (peaks/mountain ranges)</h2>
+            <div class="form-group">
+                <label for="mountainsSearchTerm">Search Term:</label>
+                <input type="text" id="mountainsSearchTerm" placeholder="Enter mountain name (e.g., Витоша, Мусала)" value="Витоша">
+            </div>
+
+            <div class="quick-tests">
+                <button class="quick-test-btn" onclick="testMountainsQuick('Витоша')">Витоша</button>
+                <button class="quick-test-btn" onclick="testMountainsQuick('Мусала')">Мусала</button>
+                <button class="quick-test-btn" onclick="testMountainsQuick('Рила')">Рила</button>
+                <button class="quick-test-btn" onclick="testMountainsQuick('Пирин')">Пирин</button>
+            </div>
+
+            <button onclick="testMountains()" id="testMountainsBtn">Search Mountains</button>
+            <button onclick="clearMountainsResults()">Clear Results</button>
+
+            <div id="mountainsStatus"></div>
+            <div id="mountainsResults" class="results" style="display:none;"></div>
+            <div id="mountainsLog" class="log" style="display:none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>🏞️ Natural Sites Search (caves/waterfalls)</h2>
+            <div class="form-group">
+                <label for="naturalSearchTerm">Search Term:</label>
+                <input type="text" id="naturalSearchTerm" placeholder="Enter natural site name (e.g., Деветашка пещера)" value="Деветашка пещера">
+            </div>
+
+            <div class="quick-tests">
+                <button class="quick-test-btn" onclick="testNaturalQuick('Деветашка пещера')">Деветашка пещера</button>
+                <button class="quick-test-btn" onclick="testNaturalQuick('Крушунски водопади')">Крушунски водопади</button>
+            </div>
+
+            <button onclick="testNaturalSites()" id="testNaturalBtn">Search Natural Sites</button>
+            <button onclick="clearNaturalResults()">Clear Results</button>
+
+            <div id="naturalStatus"></div>
+            <div id="naturalResults" class="results" style="display:none;"></div>
+            <div id="naturalLog" class="log" style="display:none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>🏛️ Cultural Sites Search (monasteries/castles/museums)</h2>
+            <div class="form-group">
+                <label for="culturalSearchTerm">Search Term:</label>
+                <input type="text" id="culturalSearchTerm" placeholder="Enter cultural site name (e.g., Рилски манастир)" value="Рилски манастир">
+            </div>
+
+            <div class="quick-tests">
+                <button class="quick-test-btn" onclick="testCulturalQuick('Рилски манастир')">Рилски манастир</button>
+                <button class="quick-test-btn" onclick="testCulturalQuick('Царевец')">Царевец</button>
+                <button class="quick-test-btn" onclick="testCulturalQuick('Бузлуджа')">Бузлуджа</button>
+            </div>
+
+            <button onclick="testCulturalSites()" id="testCulturalBtn">Search Cultural Sites</button>
+            <button onclick="clearCulturalResults()">Clear Results</button>
+
+            <div id="culturalStatus"></div>
+            <div id="culturalResults" class="results" style="display:none;"></div>
+            <div id="culturalLog" class="log" style="display:none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>🔍 General Overpass API Test</h2>
             <div class="form-group">
                 <label for="searchTerm">Search Term:</label>
-                <input type="text" id="searchTerm" placeholder="Enter city name (e.g., София, Пловдив, Sofia)" value="София">
+                <input type="text" id="searchTerm" placeholder="Enter location name" value="София">
             </div>
-            
+
             <div class="quick-tests">
                 <button class="quick-test-btn" onclick="testQuick('София')">София</button>
-                <button class="quick-test-btn" onclick="testQuick('Sofia')">Sofia</button>
-                <button class="quick-test-btn" onclick="testQuick('Plovdiv')">Plovdiv</button>
-                <button class="quick-test-btn" onclick="testQuick('Пловдив')">Пловдив</button>
                 <button class="quick-test-btn" onclick="testQuick('Витоша')">Витоша</button>
-                <button class="quick-test-btn" onclick="testQuick('Vitosha')">Vitosha</button>
+                <button class="quick-test-btn" onclick="testQuick('Рилски манастир')">Рилски манастир</button>
             </div>
-            
+
             <button onclick="testOverpass()" id="testBtn">Test Overpass API</button>
             <button onclick="clearResults()">Clear Results</button>
-            
+
             <div id="status"></div>
             <div id="results" class="results" style="display:none;"></div>
             <div id="log" class="log" style="display:none;"></div>
@@ -489,9 +571,349 @@
             document.getElementById('wikidataStatus').innerHTML = '';
         }
 
+        // Cities search functions
+        function setCitiesStatus(message, type = 'loading') {
+            const statusEl = document.getElementById('citiesStatus');
+            statusEl.innerHTML = `<div class="status ${type}">${message}</div>`;
+        }
+
+        function logCities(message) {
+            const logEl = document.getElementById('citiesLog');
+            const timestamp = new Date().toLocaleTimeString();
+            logEl.textContent += `[${timestamp}] ${message}\n`;
+            logEl.style.display = 'block';
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+
+        function showCitiesResults(data) {
+            const resultsEl = document.getElementById('citiesResults');
+            resultsEl.textContent = JSON.stringify(data, null, 2);
+            resultsEl.style.display = 'block';
+        }
+
+        function testCitiesQuick(term) {
+            document.getElementById('citiesSearchTerm').value = term;
+            testCities();
+        }
+
+        async function testCities() {
+            const searchTerm = document.getElementById('citiesSearchTerm').value.trim();
+            if (!searchTerm) {
+                setCitiesStatus('Please enter a search term', 'error');
+                return;
+            }
+
+            const testBtn = document.getElementById('testCitiesBtn');
+            testBtn.disabled = true;
+
+            setCitiesStatus(`🏙️ Searching for city "${searchTerm}"...`, 'loading');
+            logCities(`Starting cities search for: "${searchTerm}"`);
+
+            stats.total++;
+            const startTime = performance.now();
+
+            try {
+                const response = await fetch('/api/test-cities', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ searchTerm })
+                });
+
+                const endTime = performance.now();
+                const responseTime = endTime - startTime;
+                stats.responseTimes.push(responseTime);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+
+                stats.successful++;
+                setCitiesStatus(`✅ Found ${data.count || 0} cities (${responseTime.toFixed(2)}ms)`, 'success');
+                logCities(`Success! Found ${data.count || 0} cities in ${responseTime.toFixed(2)}ms`);
+                showCitiesResults(data);
+
+            } catch (error) {
+                const endTime = performance.now();
+                const responseTime = endTime - startTime;
+                stats.responseTimes.push(responseTime);
+
+                stats.failed++;
+                setCitiesStatus(`❌ Error: ${error.message}`, 'error');
+                logCities(`Error after ${responseTime.toFixed(2)}ms: ${error.message}`);
+                showCitiesResults({ error: error.message });
+            }
+
+            updateStats();
+            testBtn.disabled = false;
+        }
+
+        function clearCitiesResults() {
+            document.getElementById('citiesResults').style.display = 'none';
+            document.getElementById('citiesLog').style.display = 'none';
+            document.getElementById('citiesLog').textContent = '';
+            document.getElementById('citiesStatus').innerHTML = '';
+        }
+
+        // Mountains search functions
+        function setMountainsStatus(message, type = 'loading') {
+            const statusEl = document.getElementById('mountainsStatus');
+            statusEl.innerHTML = `<div class="status ${type}">${message}</div>`;
+        }
+
+        function logMountains(message) {
+            const logEl = document.getElementById('mountainsLog');
+            const timestamp = new Date().toLocaleTimeString();
+            logEl.textContent += `[${timestamp}] ${message}\n`;
+            logEl.style.display = 'block';
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+
+        function showMountainsResults(data) {
+            const resultsEl = document.getElementById('mountainsResults');
+            resultsEl.textContent = JSON.stringify(data, null, 2);
+            resultsEl.style.display = 'block';
+        }
+
+        function testMountainsQuick(term) {
+            document.getElementById('mountainsSearchTerm').value = term;
+            testMountains();
+        }
+
+        async function testMountains() {
+            const searchTerm = document.getElementById('mountainsSearchTerm').value.trim();
+            if (!searchTerm) {
+                setMountainsStatus('Please enter a search term', 'error');
+                return;
+            }
+
+            const testBtn = document.getElementById('testMountainsBtn');
+            testBtn.disabled = true;
+
+            setMountainsStatus(`⛰️ Searching for mountain "${searchTerm}"...`, 'loading');
+            logMountains(`Starting mountains search for: "${searchTerm}"`);
+
+            stats.total++;
+            const startTime = performance.now();
+
+            try {
+                const response = await fetch('/api/test-mountains', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ searchTerm })
+                });
+
+                const endTime = performance.now();
+                const responseTime = endTime - startTime;
+                stats.responseTimes.push(responseTime);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+
+                stats.successful++;
+                setMountainsStatus(`✅ Found ${data.count || 0} mountains (${responseTime.toFixed(2)}ms)`, 'success');
+                logMountains(`Success! Found ${data.count || 0} mountains in ${responseTime.toFixed(2)}ms`);
+                showMountainsResults(data);
+
+            } catch (error) {
+                const endTime = performance.now();
+                const responseTime = endTime - startTime;
+                stats.responseTimes.push(responseTime);
+
+                stats.failed++;
+                setMountainsStatus(`❌ Error: ${error.message}`, 'error');
+                logMountains(`Error after ${responseTime.toFixed(2)}ms: ${error.message}`);
+                showMountainsResults({ error: error.message });
+            }
+
+            updateStats();
+            testBtn.disabled = false;
+        }
+
+        function clearMountainsResults() {
+            document.getElementById('mountainsResults').style.display = 'none';
+            document.getElementById('mountainsLog').style.display = 'none';
+            document.getElementById('mountainsLog').textContent = '';
+            document.getElementById('mountainsStatus').innerHTML = '';
+        }
+
+        // Natural sites search functions
+        function setNaturalStatus(message, type = 'loading') {
+            const statusEl = document.getElementById('naturalStatus');
+            statusEl.innerHTML = `<div class="status ${type}">${message}</div>`;
+        }
+
+        function logNatural(message) {
+            const logEl = document.getElementById('naturalLog');
+            const timestamp = new Date().toLocaleTimeString();
+            logEl.textContent += `[${timestamp}] ${message}\n`;
+            logEl.style.display = 'block';
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+
+        function showNaturalResults(data) {
+            const resultsEl = document.getElementById('naturalResults');
+            resultsEl.textContent = JSON.stringify(data, null, 2);
+            resultsEl.style.display = 'block';
+        }
+
+        function testNaturalQuick(term) {
+            document.getElementById('naturalSearchTerm').value = term;
+            testNaturalSites();
+        }
+
+        async function testNaturalSites() {
+            const searchTerm = document.getElementById('naturalSearchTerm').value.trim();
+            if (!searchTerm) {
+                setNaturalStatus('Please enter a search term', 'error');
+                return;
+            }
+
+            const testBtn = document.getElementById('testNaturalBtn');
+            testBtn.disabled = true;
+
+            setNaturalStatus(`🏞️ Searching for natural site "${searchTerm}"...`, 'loading');
+            logNatural(`Starting natural sites search for: "${searchTerm}"`);
+
+            stats.total++;
+            const startTime = performance.now();
+
+            try {
+                const response = await fetch('/api/test-natural-sites', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ searchTerm })
+                });
+
+                const endTime = performance.now();
+                const responseTime = endTime - startTime;
+                stats.responseTimes.push(responseTime);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+
+                stats.successful++;
+                setNaturalStatus(`✅ Found ${data.count || 0} natural sites (${responseTime.toFixed(2)}ms)`, 'success');
+                logNatural(`Success! Found ${data.count || 0} natural sites in ${responseTime.toFixed(2)}ms`);
+                showNaturalResults(data);
+
+            } catch (error) {
+                const endTime = performance.now();
+                const responseTime = endTime - startTime;
+                stats.responseTimes.push(responseTime);
+
+                stats.failed++;
+                setNaturalStatus(`❌ Error: ${error.message}`, 'error');
+                logNatural(`Error after ${responseTime.toFixed(2)}ms: ${error.message}`);
+                showNaturalResults({ error: error.message });
+            }
+
+            updateStats();
+            testBtn.disabled = false;
+        }
+
+        function clearNaturalResults() {
+            document.getElementById('naturalResults').style.display = 'none';
+            document.getElementById('naturalLog').style.display = 'none';
+            document.getElementById('naturalLog').textContent = '';
+            document.getElementById('naturalStatus').innerHTML = '';
+        }
+
+        // Cultural sites search functions
+        function setCulturalStatus(message, type = 'loading') {
+            const statusEl = document.getElementById('culturalStatus');
+            statusEl.innerHTML = `<div class="status ${type}">${message}</div>`;
+        }
+
+        function logCultural(message) {
+            const logEl = document.getElementById('culturalLog');
+            const timestamp = new Date().toLocaleTimeString();
+            logEl.textContent += `[${timestamp}] ${message}\n`;
+            logEl.style.display = 'block';
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+
+        function showCulturalResults(data) {
+            const resultsEl = document.getElementById('culturalResults');
+            resultsEl.textContent = JSON.stringify(data, null, 2);
+            resultsEl.style.display = 'block';
+        }
+
+        function testCulturalQuick(term) {
+            document.getElementById('culturalSearchTerm').value = term;
+            testCulturalSites();
+        }
+
+        async function testCulturalSites() {
+            const searchTerm = document.getElementById('culturalSearchTerm').value.trim();
+            if (!searchTerm) {
+                setCulturalStatus('Please enter a search term', 'error');
+                return;
+            }
+
+            const testBtn = document.getElementById('testCulturalBtn');
+            testBtn.disabled = true;
+
+            setCulturalStatus(`🏛️ Searching for cultural site "${searchTerm}"...`, 'loading');
+            logCultural(`Starting cultural sites search for: "${searchTerm}"`);
+
+            stats.total++;
+            const startTime = performance.now();
+
+            try {
+                const response = await fetch('/api/test-cultural-sites', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ searchTerm })
+                });
+
+                const endTime = performance.now();
+                const responseTime = endTime - startTime;
+                stats.responseTimes.push(responseTime);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+
+                stats.successful++;
+                setCulturalStatus(`✅ Found ${data.count || 0} cultural sites (${responseTime.toFixed(2)}ms)`, 'success');
+                logCultural(`Success! Found ${data.count || 0} cultural sites in ${responseTime.toFixed(2)}ms`);
+                showCulturalResults(data);
+
+            } catch (error) {
+                const endTime = performance.now();
+                const responseTime = endTime - startTime;
+                stats.responseTimes.push(responseTime);
+
+                stats.failed++;
+                setCulturalStatus(`❌ Error: ${error.message}`, 'error');
+                logCultural(`Error after ${responseTime.toFixed(2)}ms: ${error.message}`);
+                showCulturalResults({ error: error.message });
+            }
+
+            updateStats();
+            testBtn.disabled = false;
+        }
+
+        function clearCulturalResults() {
+            document.getElementById('culturalResults').style.display = 'none';
+            document.getElementById('culturalLog').style.display = 'none';
+            document.getElementById('culturalLog').textContent = '';
+            document.getElementById('culturalStatus').innerHTML = '';
+        }
+
         // Initialize
         updateStats();
-        log('Admin page loaded and ready for testing all APIs: Overpass, Wikipedia, and Wikidata');
+        log('Admin page loaded and ready for testing: Cities, Mountains, Natural Sites, Cultural Sites, Wikipedia, and Wikidata');
     </script>
 </body>
 </html>

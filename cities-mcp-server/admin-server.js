@@ -10,7 +10,7 @@ import { WikidataService } from './src/services/wikidata-service.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-const PORT = 3000;
+const PORT = process.env.PORT || 3005;
 const overpassService = new OverpassService();
 const wikipediaService = new WikipediaService();
 const wikidataService = new WikidataService();
@@ -73,64 +73,313 @@ async function handleRequest(req, res) {
             // Rate limiting check
             if (isRateLimited(clientIP)) {
                 res.writeHead(429, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({ 
-                    error: 'Rate limit exceeded. Max 10 requests per minute.' 
+                res.end(JSON.stringify({
+                    error: 'Rate limit exceeded. Max 10 requests per minute.'
                 }));
                 return;
             }
-            
+
             // Handle Overpass API test
             let body = '';
             req.on('data', chunk => {
                 body += chunk.toString();
             });
-            
+
             req.on('end', async () => {
                 try {
-                    const { searchTerm } = JSON.parse(body);
-                    
+                    const { searchTerm, locationType } = JSON.parse(body);
+
                     if (!searchTerm || typeof searchTerm !== 'string') {
                         res.writeHead(400, { 'Content-Type': 'application/json' });
                         res.end(JSON.stringify({ error: 'Missing or invalid searchTerm' }));
                         return;
                     }
-                    
-                    console.log(`🔍 Testing Overpass search for: "${searchTerm}"`);
-                    
+
+                    console.log(`🔍 Testing Overpass search for: "${searchTerm}"${locationType ? ` (type: ${locationType})` : ''}`);
+
                     const startTime = Date.now();
-                    const results = await overpassService.searchByName(searchTerm);
+                    const results = await overpassService.searchByName(searchTerm, locationType || null);
                     const endTime = Date.now();
                     const responseTime = endTime - startTime;
-                    
+
                     const response = {
                         searchTerm,
+                        locationType: locationType || 'general',
                         results,
                         count: results.length,
                         responseTime,
                         timestamp: new Date().toISOString(),
                         status: 'success'
                     };
-                    
+
                     console.log(`✅ Found ${results.length} results in ${responseTime}ms`);
-                    
+
                     res.writeHead(200, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify(response, null, 2));
-                    
+
                 } catch (error) {
                     console.error(`❌ Overpass error:`, error.message);
-                    
+
                     const errorResponse = {
                         searchTerm: JSON.parse(body).searchTerm,
                         error: error.message,
                         timestamp: new Date().toISOString(),
                         status: 'error'
                     };
-                    
+
                     res.writeHead(500, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify(errorResponse, null, 2));
                 }
             });
-            
+
+        } else if (url.pathname === '/api/test-cities' && req.method === 'POST') {
+            // Rate limiting check
+            if (isRateLimited(clientIP)) {
+                res.writeHead(429, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({
+                    error: 'Rate limit exceeded. Max 10 requests per minute.'
+                }));
+                return;
+            }
+
+            let body = '';
+            req.on('data', chunk => {
+                body += chunk.toString();
+            });
+
+            req.on('end', async () => {
+                try {
+                    const { searchTerm } = JSON.parse(body);
+
+                    if (!searchTerm || typeof searchTerm !== 'string') {
+                        res.writeHead(400, { 'Content-Type': 'application/json' });
+                        res.end(JSON.stringify({ error: 'Missing or invalid searchTerm' }));
+                        return;
+                    }
+
+                    console.log(`🏙️ Testing cities search for: "${searchTerm}"`);
+
+                    const startTime = Date.now();
+                    const results = await overpassService.searchCities(searchTerm);
+                    const endTime = Date.now();
+                    const responseTime = endTime - startTime;
+
+                    const response = {
+                        searchTerm,
+                        category: 'cities',
+                        results,
+                        count: results.length,
+                        responseTime,
+                        timestamp: new Date().toISOString(),
+                        status: 'success'
+                    };
+
+                    console.log(`✅ Found ${results.length} cities in ${responseTime}ms`);
+
+                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify(response, null, 2));
+
+                } catch (error) {
+                    console.error(`❌ Cities search error:`, error.message);
+
+                    const errorResponse = {
+                        searchTerm: JSON.parse(body).searchTerm,
+                        error: error.message,
+                        timestamp: new Date().toISOString(),
+                        status: 'error'
+                    };
+
+                    res.writeHead(500, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify(errorResponse, null, 2));
+                }
+            });
+
+        } else if (url.pathname === '/api/test-mountains' && req.method === 'POST') {
+            // Rate limiting check
+            if (isRateLimited(clientIP)) {
+                res.writeHead(429, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({
+                    error: 'Rate limit exceeded. Max 10 requests per minute.'
+                }));
+                return;
+            }
+
+            let body = '';
+            req.on('data', chunk => {
+                body += chunk.toString();
+            });
+
+            req.on('end', async () => {
+                try {
+                    const { searchTerm } = JSON.parse(body);
+
+                    if (!searchTerm || typeof searchTerm !== 'string') {
+                        res.writeHead(400, { 'Content-Type': 'application/json' });
+                        res.end(JSON.stringify({ error: 'Missing or invalid searchTerm' }));
+                        return;
+                    }
+
+                    console.log(`⛰️ Testing mountains search for: "${searchTerm}"`);
+
+                    const startTime = Date.now();
+                    const results = await overpassService.searchMountains(searchTerm);
+                    const endTime = Date.now();
+                    const responseTime = endTime - startTime;
+
+                    const response = {
+                        searchTerm,
+                        category: 'mountains',
+                        results,
+                        count: results.length,
+                        responseTime,
+                        timestamp: new Date().toISOString(),
+                        status: 'success'
+                    };
+
+                    console.log(`✅ Found ${results.length} mountains in ${responseTime}ms`);
+
+                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify(response, null, 2));
+
+                } catch (error) {
+                    console.error(`❌ Mountains search error:`, error.message);
+
+                    const errorResponse = {
+                        searchTerm: JSON.parse(body).searchTerm,
+                        error: error.message,
+                        timestamp: new Date().toISOString(),
+                        status: 'error'
+                    };
+
+                    res.writeHead(500, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify(errorResponse, null, 2));
+                }
+            });
+
+        } else if (url.pathname === '/api/test-natural-sites' && req.method === 'POST') {
+            // Rate limiting check
+            if (isRateLimited(clientIP)) {
+                res.writeHead(429, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({
+                    error: 'Rate limit exceeded. Max 10 requests per minute.'
+                }));
+                return;
+            }
+
+            let body = '';
+            req.on('data', chunk => {
+                body += chunk.toString();
+            });
+
+            req.on('end', async () => {
+                try {
+                    const { searchTerm } = JSON.parse(body);
+
+                    if (!searchTerm || typeof searchTerm !== 'string') {
+                        res.writeHead(400, { 'Content-Type': 'application/json' });
+                        res.end(JSON.stringify({ error: 'Missing or invalid searchTerm' }));
+                        return;
+                    }
+
+                    console.log(`🏞️ Testing natural sites search for: "${searchTerm}"`);
+
+                    const startTime = Date.now();
+                    const results = await overpassService.searchNaturalSites(searchTerm);
+                    const endTime = Date.now();
+                    const responseTime = endTime - startTime;
+
+                    const response = {
+                        searchTerm,
+                        category: 'natural_sites',
+                        results,
+                        count: results.length,
+                        responseTime,
+                        timestamp: new Date().toISOString(),
+                        status: 'success'
+                    };
+
+                    console.log(`✅ Found ${results.length} natural sites in ${responseTime}ms`);
+
+                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify(response, null, 2));
+
+                } catch (error) {
+                    console.error(`❌ Natural sites search error:`, error.message);
+
+                    const errorResponse = {
+                        searchTerm: JSON.parse(body).searchTerm,
+                        error: error.message,
+                        timestamp: new Date().toISOString(),
+                        status: 'error'
+                    };
+
+                    res.writeHead(500, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify(errorResponse, null, 2));
+                }
+            });
+
+        } else if (url.pathname === '/api/test-cultural-sites' && req.method === 'POST') {
+            // Rate limiting check
+            if (isRateLimited(clientIP)) {
+                res.writeHead(429, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({
+                    error: 'Rate limit exceeded. Max 10 requests per minute.'
+                }));
+                return;
+            }
+
+            let body = '';
+            req.on('data', chunk => {
+                body += chunk.toString();
+            });
+
+            req.on('end', async () => {
+                try {
+                    const { searchTerm } = JSON.parse(body);
+
+                    if (!searchTerm || typeof searchTerm !== 'string') {
+                        res.writeHead(400, { 'Content-Type': 'application/json' });
+                        res.end(JSON.stringify({ error: 'Missing or invalid searchTerm' }));
+                        return;
+                    }
+
+                    console.log(`🏛️ Testing cultural sites search for: "${searchTerm}"`);
+
+                    const startTime = Date.now();
+                    const results = await overpassService.searchCulturalSites(searchTerm);
+                    const endTime = Date.now();
+                    const responseTime = endTime - startTime;
+
+                    const response = {
+                        searchTerm,
+                        category: 'cultural_sites',
+                        results,
+                        count: results.length,
+                        responseTime,
+                        timestamp: new Date().toISOString(),
+                        status: 'success'
+                    };
+
+                    console.log(`✅ Found ${results.length} cultural sites in ${responseTime}ms`);
+
+                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify(response, null, 2));
+
+                } catch (error) {
+                    console.error(`❌ Cultural sites search error:`, error.message);
+
+                    const errorResponse = {
+                        searchTerm: JSON.parse(body).searchTerm,
+                        error: error.message,
+                        timestamp: new Date().toISOString(),
+                        status: 'error'
+                    };
+
+                    res.writeHead(500, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify(errorResponse, null, 2));
+                }
+            });
+
         } else if (url.pathname === '/api/test-wikipedia' && req.method === 'POST') {
             // Rate limiting check
             if (isRateLimited(clientIP)) {
@@ -285,14 +534,21 @@ async function handleRequest(req, res) {
 const server = createServer(handleRequest);
 
 server.listen(PORT, () => {
-    console.log(`🚀 Cities MCP Admin Server running on http://localhost:${PORT}`);
+    console.log(`🚀 Locations MCP Admin Server running on http://localhost:${PORT}`);
     console.log(`📊 Admin page: http://localhost:${PORT}/admin`);
-    console.log(`🔧 API endpoints:`);
+    console.log(`\n🔧 API endpoints:`);
+    console.log(`   General:`);
     console.log(`   - Overpass: http://localhost:${PORT}/api/test-overpass`);
+    console.log(`\n   Category-specific:`);
+    console.log(`   - Cities: http://localhost:${PORT}/api/test-cities`);
+    console.log(`   - Mountains: http://localhost:${PORT}/api/test-mountains`);
+    console.log(`   - Natural Sites: http://localhost:${PORT}/api/test-natural-sites`);
+    console.log(`   - Cultural Sites: http://localhost:${PORT}/api/test-cultural-sites`);
+    console.log(`\n   External APIs:`);
     console.log(`   - Wikipedia: http://localhost:${PORT}/api/test-wikipedia`);
     console.log(`   - Wikidata: http://localhost:${PORT}/api/test-wikidata`);
-    console.log(`📈 Stats: http://localhost:${PORT}/api/stats`);
-    console.log('\n🔍 Ready to test Overpass, Wikipedia, and Wikidata API calls with rate limiting (10 requests/minute)');
+    console.log(`\n📈 Stats: http://localhost:${PORT}/api/stats`);
+    console.log('\n🔍 Ready to test location searches by category with rate limiting (10 requests/minute)');
 });
 
 // Graceful shutdown
